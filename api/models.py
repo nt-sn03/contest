@@ -5,6 +5,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class School(models.Model):
     name = models.CharField(max_length=127, unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 class Group(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="groups")
@@ -19,9 +22,15 @@ class Group(models.Model):
     class Meta:
         unique_together = ("school", "year", "group")
 
+    def __str__(self):
+        return f"{self.school} {self.year}{self.group}"
+
 
 class Village(models.Model):
     name = models.CharField(max_length=127, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Contest(models.Model):
@@ -34,6 +43,9 @@ class Contest(models.Model):
     contest_type = models.CharField(
         choices=TypeChoices.choices, default=TypeChoices.ALL
     )
+
+    def __str__(self):
+        return self.title
 
 
 class Condidate(models.Model):
@@ -52,6 +64,9 @@ class Condidate(models.Model):
     )
     contests = models.ManyToManyField(Contest, related_name="condidates")
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
 
 class Result(models.Model):
     contest = models.ForeignKey(
@@ -63,3 +78,6 @@ class Result(models.Model):
     ball = models.FloatField(
         validators=[MinValueValidator(0.0), MaxValueValidator(100)]
     )
+
+    def __str__(self):
+        return f"{self.condidate} - {self.contest} ({self.ball})"
