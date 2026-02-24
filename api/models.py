@@ -4,6 +4,10 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 class School(models.Model):
     name = models.CharField(max_length=127, unique=True)
+    class Meta:
+        verbose_name = "Maktab"
+        verbose_name_plural = "Maktablar"
+    
 
 
 class Group(models.Model):
@@ -18,10 +22,15 @@ class Group(models.Model):
 
     class Meta:
         unique_together = ("school", "year", "group")
+        verbose_name = "Guruh"
+        verbose_name_plural = "Guruhlar"
 
 
 class Village(models.Model):
     name = models.CharField(max_length=127, unique=True)
+    class Meta:
+        verbose_name = "Qishloq"
+        verbose_name_plural = "Qishloqlar"
 
 
 class Contest(models.Model):
@@ -34,6 +43,10 @@ class Contest(models.Model):
     contest_type = models.CharField(
         choices=TypeChoices.choices, default=TypeChoices.ALL
     )
+    
+    class Meta:
+        verbose_name = "Musobaqa"
+        verbose_name_plural = "Musobaqalar"
 
 
 class Condidate(models.Model):
@@ -51,6 +64,10 @@ class Condidate(models.Model):
         Village, on_delete=models.DO_NOTHING, related_name="condidates"
     )
     contests = models.ManyToManyField(Contest, related_name="condidates")
+    
+    class Meta:
+        verbose_name = "Nomzod"
+        verbose_name_plural = "Nomzodlar"
 
 
 class Result(models.Model):
@@ -63,3 +80,7 @@ class Result(models.Model):
     ball = models.FloatField(
         validators=[MinValueValidator(0.0), MaxValueValidator(100)]
     )
+    class Meta:
+        unique_together = ("contest", "condidate")
+        verbose_name = "Natija"
+        verbose_name_plural = "Natijalar"
