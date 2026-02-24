@@ -5,29 +5,33 @@ from .models import School, Group, Village, Condidate, Contest, Result
 
 @admin.register(School)
 class SchoolModelAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("name",)
 
 
 @admin.register(Group)
 class GroupModelAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("school", "year", "group")
+    list_filter = ("school", "year")
 
 
 @admin.register(Village)
 class VillageModelAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("name",)
 
 
 @admin.register(Condidate)
 class CondidateModelAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("first_name", "last_name", "gender", "group")
+    list_filter = ("gender", "group__school", "group__year")
+    search_fields = ("first_name", "last_name") 
 
 
 @admin.register(Contest)
 class ContestModelAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("title", "contest_type")
+    list_filter = ("contest_type",)
 
 
 @admin.register(Result)
 class ResultModelAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("contest", "condidate", "ball")
