@@ -8,15 +8,16 @@ from .models import (
     Group,
     Village,
     Contest,
-    Condidate,
+    Candidate,
     Result,
 )
 
 APP_LABEL = "contest"
 
+
 @admin.register(School)
 class SchoolAdmin(admin.ModelAdmin):
-    list_display = ("name", "group_count", "condidate_count")
+    list_display = ("name", "group_count", "candidate_count")
     search_fields = ("name",)
     ordering = ("name",)
 
@@ -24,50 +25,62 @@ class SchoolAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         return qs.annotate(
             group_total=Count("groups", distinct=True),
-            condidate_total=Count("groups__condidates", distinct=True),
+            candidate_total=Count("groups__candidates", distinct=True),
         )
 
     def group_count(self, obj):
         return obj.group_total
+
     group_count.short_description = "Sinflar soni"
 
-    def condidate_count(self, obj):
-        return obj.condidate_total
-    condidate_count.short_description = "O'quvchilar soni"
+    def candidate_count(self, obj):
+        return obj.candidate_total
+
+    candidate_count.short_description = "O‘quvchilar soni"
+
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ("school", "year", "group", "condidate_count")
+    list_display = ("school", "year", "letter", "candidate_count")
     list_filter = ("school", "year")
     search_fields = ("school__name",)
-    ordering = ("school", "year", "group")
+    ordering = ("school", "year", "letter")
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.annotate(total=Count("condidates"))
+        return qs.annotate(total=Count("candidates"))
 
-    def condidate_count(self, obj):
+    def candidate_count(self, obj):
         return obj.total
-    condidate_count.short_description = "O'quvchilar"
+
+    candidate_count.short_description = "O‘quvchilar"
+
 
 @admin.register(Village)
 class VillageAdmin(admin.ModelAdmin):
-    list_display = ("name", "condidate_count")
+    list_display = ("name", "candidate_count")
     search_fields = ("name",)
     ordering = ("name",)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.annotate(total=Count("condidates"))
+        return qs.annotate(total=Count("candidates"))
 
-    def condidate_count(self, obj):
+    def candidate_count(self, obj):
         return obj.total
-    condidate_count.short_description = "Ishtirokchilar"
+
+    candidate_count.short_description = "Ishtirokchilar"
 
 
 @admin.register(Contest)
 class ContestAdmin(admin.ModelAdmin):
-    list_display = ("title", "contest_type_colored", "condidate_count", "result_count")
+    list_display = (
+        "title",
+        "contest_type_colored",
+        "candidate_count",
+        "result_count",
+        "date",
+    )
     list_filter = ("contest_type",)
     search_fields = ("title",)
     ordering = ("title",)
@@ -75,7 +88,7 @@ class ContestAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(
-            c_total=Count("condidates", distinct=True),
+            c_total=Count("candidates", distinct=True),
             r_total=Count("results", distinct=True),
         )
 
@@ -90,18 +103,22 @@ class ContestAdmin(admin.ModelAdmin):
             colors[obj.contest_type],
             obj.get_contest_type_display(),
         )
+
     contest_type_colored.short_description = "Turi"
 
-    def condidate_count(self, obj):
+    def candidate_count(self, obj):
         return obj.c_total
-    condidate_count.short_description = "Ishtirokchilar"
+
+    candidate_count.short_description = "Ishtirokchilar"
 
     def result_count(self, obj):
         return obj.r_total
+
     result_count.short_description = "Natijalar"
 
-@admin.register(Condidate)
-class CondidateAdmin(admin.ModelAdmin):
+
+@admin.register(Candidate)
+class CandidateAdmin(admin.ModelAdmin):
     list_display = (
         "full_name",
         "gender_colored",
@@ -131,6 +148,7 @@ class CondidateAdmin(admin.ModelAdmin):
 
     def full_name(self, obj):
         return f"{obj.last_name} {obj.first_name}"
+
     full_name.short_description = "F.I."
 
     def gender_colored(self, obj):
@@ -139,15 +157,18 @@ class CondidateAdmin(admin.ModelAdmin):
             "#0d6efd" if obj.gender == "male" else "#d63384",
             obj.get_gender_display(),
         )
+
     gender_colored.short_description = "Jinsi"
 
     def school(self, obj):
         return obj.group.school
+
     school.short_description = "Maktab"
     school.admin_order_field = "group__school__name"
 
     def contest_count(self, obj):
         return obj.total
+
     contest_count.short_description = "Tanlovlar"
 
 
@@ -155,49 +176,54 @@ class CondidateAdmin(admin.ModelAdmin):
 class ResultAdmin(admin.ModelAdmin):
     list_display = (
         "contest",
-        "condidate_link",
-        "ball",
+        "candidate_link",
+        "score",
         "school",
         "group_name",
         "gender_icon",
     )
     list_filter = (
         "contest",
-        "condidate__gender",
-        "condidate__group__school",
-        "condidate__group__year",
+        "candidate__gender",
+        "candidate__group__school",
+        "candidate__group__year",
     )
     search_fields = (
-        "condidate__first_name",
-        "condidate__last_name",
+        "candidate__first_name",
+        "candidate__last_name",
         "contest__title",
     )
-    autocomplete_fields = ("contest", "condidate")
+    autocomplete_fields = ("contest", "candidate")
     list_select_related = (
         "contest",
-        "condidate",
-        "condidate__group",
-        "condidate__group__school",
+        "candidate",
+        "candidate__group",
+        "candidate__group__school",
     )
 
-    def condidate_link(self, obj):
+    def candidate_link(self, obj):
+        opts = obj.candidate._meta
         url = reverse(
-            f"admin:{APP_LABEL}_condidate_change",
-            args=[obj.condidate.pk],
+            f"admin:{opts.app_label}_{opts.model_name}_change",
+            args=[obj.candidate.pk],
         )
-        return format_html('<a href="{}">{}</a>', url, obj.condidate)
-    condidate_link.short_description = "Ishtirokchi"
+        return format_html('<a href="{}">{}</a>', url, obj.candidate)
+
+    candidate_link.short_description = "Ishtirokchi"
 
     def school(self, obj):
-        return obj.condidate.group.school
+        return obj.candidate.group.school
+
     school.short_description = "Maktab"
-    school.admin_order_field = "condidate__group__school__name"
+    school.admin_order_field = "candidate__group__school__name"
 
     def group_name(self, obj):
-        g = obj.condidate.group
-        return f"{g.year}-{g.group}"
+        g = obj.candidate.group
+        return f"{g.year}{g.letter}"
+
     group_name.short_description = "Sinfi"
 
     def gender_icon(self, obj):
-        return "♂" if obj.condidate.gender == "male" else "♀"
+        return "♂" if obj.candidate.gender == "male" else "♀"
+
     gender_icon.short_description = "Jinsi"
